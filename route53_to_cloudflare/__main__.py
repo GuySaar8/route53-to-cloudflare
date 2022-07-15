@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-##TODO jinja templates to spesific folders
+## TODO jinja templates to spesific folders
+## TODO set modules for renders and set records
 
 import argparse
 from threading import activeCount
@@ -31,12 +32,12 @@ def set_ZoneName(zone):
     # set zone name
     zoneName=zone['Name'].replace('.', '_')
     # slice the last '_' from the folder name
-    if zone['Name'].endswith('.'):
+    if zone['Name'].endswith('_'):
         zoneName=zoneName[0:-1]
     return zoneName
 
 def set_ResourceName(record):
-    """sets the name of the resources in 
+    """sets the name of the resources in
     for example resources['A'][the name of the resource]"""
     if record['Name'].endswith('.'):
         name = record['Name'][0:-1].replace('.', '_')
@@ -51,7 +52,7 @@ def set_ResourceName(record):
 # sets the of the name of the record
 # removing the . at the end of the name
 # changeing boto3 output of \052 back to star
-# if subDomain - get only the subDomain name - remove the xxx.com from the name 
+# if subDomain - get only the subDomain name - remove the xxx.com from the name
 def set_RecordName(name):
     if name.startswith('\\052'):
         recordName = name.replace('\\052', '*')
@@ -148,12 +149,12 @@ def a(zoneName, record, aws_account_id):
             # add to CNAME record dictinary
             resources['CNAME'][resource] = { 'name': recordName }
 
-            render_single_value_records("CNAME", zoneName, recordName, 1, 
-                removeDotFromEnd(record['AliasTarget']['DNSName']), resource, aws_account_id)   
+            render_single_value_records("CNAME", zoneName, recordName, 1,
+                removeDotFromEnd(record['AliasTarget']['DNSName']), resource, aws_account_id)
         return True
     return False
 
-# addes resources to resources['AAAA'] 
+# addes resources to resources['AAAA']
 def aaaa(zoneName, record, aws_account_id):
     match = (record['Type'] == 'AAAA')
     if match:
@@ -161,18 +162,18 @@ def aaaa(zoneName, record, aws_account_id):
         recordName = set_RecordName(record['Name'])
         if 'ResourceRecords' in  record:
             # add to AAAA record dictinary
-            resources['AAAA'][resource] = { 'name': recordName }                 
-            render_single_value_records("AAAA", zoneName, recordName, 1, 
+            resources['AAAA'][resource] = { 'name': recordName }
+            render_single_value_records("AAAA", zoneName, recordName, 1,
                 removeDotFromEnd(record['ResourceRecords'][0]['Value']), resource), aws_account_id
         elif 'AliasTarget' in record:
             # add to CNAME record dictinary
             resources['CNAME'][resource] = { 'name': recordName }
-            render_single_value_records("CNAME", zoneName, recordName, 1, 
-                removeDotFromEnd(record['AliasTarget']['DNSName']), resource, aws_account_id) 
+            render_single_value_records("CNAME", zoneName, recordName, 1,
+                removeDotFromEnd(record['AliasTarget']['DNSName']), resource, aws_account_id)
         return True
     return False
 
-# addes resources to resources['CNAME'] 
+# addes resources to resources['CNAME']
 def cname(zoneName, record, aws_account_id):
     # match = re.match(CNAME, record)
     match = (record['Type'] == 'CNAME')
@@ -180,24 +181,24 @@ def cname(zoneName, record, aws_account_id):
         resource = set_ResourceName(record)
         recordName = set_RecordName(record['Name'])
         # add to CNAME record dictinary
-        resources['CNAME'][resource] = { 'name': recordName }  
-        if 'ResourceRecords' in  record:   
-            render_single_value_records("CNAME", zoneName, recordName, 1, 
+        resources['CNAME'][resource] = { 'name': recordName }
+        if 'ResourceRecords' in  record:
+            render_single_value_records("CNAME", zoneName, recordName, 1,
                 removeDotFromEnd(record['ResourceRecords'][0]['Value']), resource, aws_account_id)
         elif 'AliasTarget' in record:
-            render_single_value_records("CNAME", zoneName, recordName, 1, 
+            render_single_value_records("CNAME", zoneName, recordName, 1,
                 removeDotFromEnd(record['AliasTarget']['DNSName']), resource, aws_account_id)
         return True
     return False
 
-# addes resources to resources['MX'] 
+# addes resources to resources['MX']
 def mx(zoneName, record, aws_account_id):
     # match = re.match(MX, record)
     match = (record['Type'] == 'MX')
     if match:
         resource = set_ResourceName(record)
         recordName = set_RecordName(record['Name'])
-        resources['MX'][resource] = { 'name': recordName } 
+        resources['MX'][resource] = { 'name': recordName }
         # set priority and value
         setPV, setPV2, setPV3, setPV4, setPV5 = set_MX_value(record['ResourceRecords'])
 
@@ -207,27 +208,27 @@ def mx(zoneName, record, aws_account_id):
                 removeDotFromEnd(setPV[1]), setPV[0])
 
         elif x == 2:
-            render_MX_records("MX2", zoneName, recordName, 1, resource, aws_account_id, 
+            render_MX_records("MX2", zoneName, recordName, 1, resource, aws_account_id,
                 removeDotFromEnd(setPV[1]), setPV[0],
                 removeDotFromEnd(setPV2[1]), setPV2[0])
 
         elif x == 3:
-            render_MX_records("MX3", zoneName, recordName, 1, resource, aws_account_id, 
+            render_MX_records("MX3", zoneName, recordName, 1, resource, aws_account_id,
                 removeDotFromEnd(setPV[1]), setPV[0],
-                removeDotFromEnd(setPV2[1]), setPV2[0], 
+                removeDotFromEnd(setPV2[1]), setPV2[0],
                 removeDotFromEnd(setPV3[1]), setPV3[0])
 
         elif x == 4:
-            render_MX_records("MX4", zoneName, recordName, 1, resource, aws_account_id, 
+            render_MX_records("MX4", zoneName, recordName, 1, resource, aws_account_id,
                 removeDotFromEnd(setPV[1]), setPV[0],
-                removeDotFromEnd(setPV2[1]), setPV2[0], 
+                removeDotFromEnd(setPV2[1]), setPV2[0],
                 removeDotFromEnd(setPV3[1]), setPV3[0],
                 removeDotFromEnd(setPV4[1]), setPV4[0])
 
         elif x == 5:
-            render_MX_records("MX5", zoneName, recordName, 1, resource, aws_account_id, 
+            render_MX_records("MX5", zoneName, recordName, 1, resource, aws_account_id,
                 removeDotFromEnd(setPV[1]), setPV[0],
-                removeDotFromEnd(setPV2[1]), setPV2[0], 
+                removeDotFromEnd(setPV2[1]), setPV2[0],
                 removeDotFromEnd(setPV3[1]), setPV3[0],
                 removeDotFromEnd(setPV4[1]), setPV4[0],
                 removeDotFromEnd(setPV5[1]), setPV5[0])
@@ -236,7 +237,7 @@ def mx(zoneName, record, aws_account_id):
 
 
 
-# adds resources to resources['TXT'] 
+# adds resources to resources['TXT']
 def txt(zoneName, record, aws_account_id):
     # match = re.match(TXT, record)
     match = (record['Type'] == 'TXT')
@@ -244,7 +245,7 @@ def txt(zoneName, record, aws_account_id):
         resource = set_ResourceName(record)
         recordName = set_RecordName(record['Name'])
         resources['TXT'][resource] = { 'name': recordName }
-        # set TXT value 
+        # set TXT value
         value1, value2, value3, value4, value5, value6,value7, value8, value9, value10 = set_TXT_value(record['ResourceRecords'])
 
         if (len(record['ResourceRecords'])) == 1:
@@ -265,62 +266,62 @@ def txt(zoneName, record, aws_account_id):
         elif (len(record['ResourceRecords'])) == 4:
 
             render_TXT_records("TXT4", zoneName, recordName, 1, resource, aws_account_id,
-                value1=value1, value2=value2, value3=value3, 
+                value1=value1, value2=value2, value3=value3,
                 value4=value4)
 
         elif (len(record['ResourceRecords'])) == 5:
 
             render_TXT_records("TXT5", zoneName, recordName, 1, resource, aws_account_id,
-                value1=value1, value2=value2, value3=value3, 
+                value1=value1, value2=value2, value3=value3,
                 value4=value4, value5=value5)
 
         elif (len(record['ResourceRecords'])) == 6:
 
             render_TXT_records("TXT6", zoneName, recordName, 1, resource, aws_account_id,
-                value1=value1, value2=value2, value3=value3, 
+                value1=value1, value2=value2, value3=value3,
                 value4=value4, value5=value5, value6=value6)
 
         elif (len(record['ResourceRecords'])) == 7:
 
             render_TXT_records("TXT7", zoneName, recordName, 1, resource, aws_account_id,
-                value1=value1, value2=value2, value3=value3, 
-                value4=value4, value5=value5, value6=value6, 
+                value1=value1, value2=value2, value3=value3,
+                value4=value4, value5=value5, value6=value6,
                 value7=value7)
 
         elif (len(record['ResourceRecords'])) == 8:
 
             render_TXT_records("TXT8", zoneName, recordName, 1, resource, aws_account_id,
-                value1=value1, value2=value2, value3=value3, 
-                value4=value4, value5=value5, value6=value6, 
+                value1=value1, value2=value2, value3=value3,
+                value4=value4, value5=value5, value6=value6,
                 value7=value7, value8=value8)
 
 
         elif (len(record['ResourceRecords'])) == 9:
-            
+
             render_TXT_records("TXT9", zoneName, recordName, 1, resource, aws_account_id,
-                value1=value1, value2=value2, value3=value3, 
-                value4=value4, value5=value5, value6=value6, 
+                value1=value1, value2=value2, value3=value3,
+                value4=value4, value5=value5, value6=value6,
                 value7=value7, value8=value8, value9=value9)
 
         elif (len(record['ResourceRecords'])) == 10:
 
             render_TXT_records("TXT10", zoneName, recordName, 1, resource, aws_account_id,
-                value1=value1, value2=value2, value3=value3, 
-                value4=value4, value5=value5, value6=value6, 
-                value7=value7, value8=value8, value9=value9, 
+                value1=value1, value2=value2, value3=value3,
+                value4=value4, value5=value5, value6=value6,
+                value7=value7, value8=value8, value9=value9,
                 value10=value10)
 
         elif (len(record['ResourceRecords'])) > 10:
-            
+
             render_TXT_records("TXT10", zoneName, recordName, 1, resource, aws_account_id,
-                value1=value1, value2=value2, value3=value3, 
-                value4=value4, value5=value5, value6=value6, 
-                value7=value7, value8=value8, value9=value9, 
+                value1=value1, value2=value2, value3=value3,
+                value4=value4, value5=value5, value6=value6,
+                value7=value7, value8=value8, value9=value9,
                 value10="##TODO_MORE_THAN_10_VALUES")
         return True
     return False
 
-# addes resources to resources['NS'] 
+# addes resources to resources['NS']
 def ns(zoneName, record, aws_account_id):
     # match = re.match(NS, record)
     print(record)
@@ -328,23 +329,23 @@ def ns(zoneName, record, aws_account_id):
     if match:
         resource = set_ResourceName(record)
         recordName = set_RecordName(record['Name'])
-        resources['NS'][resource] = { 'name': recordName }  
+        resources['NS'][resource] = { 'name': recordName }
       # check the number of values in the ns record
         x = int(len(record['ResourceRecords']))
         if x == 1:
             resources['NS'][resource] = {'name': recordName}
-            
+
             render_NS_records("NS", zoneName, recordName, 1, resource, aws_account_id,
                 value1=removeDotFromEnd(record['ResourceRecords'][0]['Value']))
 
-        elif x == 2:           
+        elif x == 2:
             resources['NS'][resource] = {'name': recordName}
 
             render_NS_records("NS2", zoneName, recordName, 1, resource, aws_account_id,
                 value1=removeDotFromEnd(record['ResourceRecords'][0]['Value']), 
                 value2=removeDotFromEnd(record['ResourceRecords'][1]['Value']))
-        
-        elif x == 3:           
+
+        elif x == 3:
             resources['NS'][resource] = {'name': recordName}
 
             render_NS_records("NS3", zoneName, recordName, 1, resource, aws_account_id,
@@ -352,7 +353,7 @@ def ns(zoneName, record, aws_account_id):
                 value2=removeDotFromEnd(record['ResourceRecords'][1]['Value']), 
                 value3=removeDotFromEnd(record['ResourceRecords'][2]['Value']))
 
-        elif x == 4:           
+        elif x == 4:
             resources['NS'][resource] = {'name': recordName}
 
             render_NS_records("NS3", zoneName, recordName, 1, resource, aws_account_id,
@@ -360,17 +361,17 @@ def ns(zoneName, record, aws_account_id):
                 value2=removeDotFromEnd(record['ResourceRecords'][1]['Value']), 
                 value3=removeDotFromEnd(record['ResourceRecords'][2]['Value']),
                 value4=removeDotFromEnd(record['ResourceRecords'][3]['Value']))
-                 
+
         return True
     return False
 
-# addes resources to resources['SPF'] 
+# addes resources to resources['SPF']
 def spf(zoneName, record, aws_account_id):
     # match = re.match(A, record)
     print(record)
     match = (record['Type'] == 'SPF')
     if match:
-        
+
         # fix replace '"' with ''  and fix DKIM value
         value = fix_TXT_Value(record['ResourceRecords'][0]['Value'])
         resource = set_ResourceName(record)
@@ -491,11 +492,11 @@ def render(zone, rs, zoneName, account_id, cloudflare_ns_record, aws_account_id)
     template = ENV.get_template('countRecords.txt.j2')
     with open(f'./{aws_account_id}/{zoneName}/countRecords.txt', 'w') as target:
         target.write(template.render(recordsCreated=recordsCreated, recordA=recordA, recordAAAA=recordAAAA,
-        recordCANME=recordCANME, recordMX=recordMX, recordSRV=recordSRV, recordTXT=recordTXT, 
-        recordNS=recordNS, awsArecord=awsArecord, awsAAAArecord=awsAAAArecord, awsMXrecord=awsMXrecord, 
+        recordCANME=recordCANME, recordMX=recordMX, recordSRV=recordSRV, recordTXT=recordTXT,
+        recordNS=recordNS, awsArecord=awsArecord, awsAAAArecord=awsAAAArecord, awsMXrecord=awsMXrecord,
         awsTXTrecord=awsTXTrecord, awsCNAMErecord=awsCNAMErecord, awsSRVrecord=awsSRVrecord, awsNSrecord=awsNSrecord,
         awsSPFrecord=awsSPFrecord, recordSPF=recordSPF, rs=(len(rs['ResourceRecordSets']))))
-    
+
     # 0 subzones
     if recordNS == 0 and len(zoneName.split('_')) == 2:
         with open(f'./{aws_account_id}/{aws_account_id}_noSubZones.txt', 'a') as target:
@@ -504,7 +505,7 @@ def render(zone, rs, zoneName, account_id, cloudflare_ns_record, aws_account_id)
         with open(f'./{aws_account_id}/{aws_account_id}_zonesWithSubDomains.txt', 'a') as target:
             target.write(zoneName.replace('_', '.') + "\n")
 
-    # nslookup                
+    # nslookup
     for item in resources:
         # create file only for the necessary records
         if not len(resources[item]) == 0:
@@ -520,7 +521,7 @@ def render(zone, rs, zoneName, account_id, cloudflare_ns_record, aws_account_id)
 
             template = ENV.get_template(f'nslookup{item}.sh.j2')
             with open(f"./{aws_account_id}/{zoneName}/validateRecords/nslookup{item}.sh", 'a') as target:
-                target.write(template.render(resources=resources[item], parentDomain=parentDomain, 
+                target.write(template.render(resources=resources[item], parentDomain=parentDomain,
                 cloudflare_ns_record=cloudflare_ns_record, space=" "))
 
             # Read in the file
@@ -542,7 +543,7 @@ def main():
     account_id = args.account_id
     cloudflare_ns_record = args.cloudflare_ns_record
     aws_account_id = args.aws_account_id
-    
+
     # get zones list
     client = boto3.client('route53')
     hostedzone=client.list_hosted_zones()
@@ -550,7 +551,7 @@ def main():
     # check if folder exists
     if not os.path.exists(f'./{aws_account_id}'):
         os.mkdir(f'./{aws_account_id}')
-    
+
     # filter out private domains
     for zone in hostedzone["HostedZones"]:
         if not zone["Config"]["PrivateZone"]:
@@ -582,7 +583,7 @@ def main():
             # empty resources dict for new zone
             for i in resources:
                 resources[i].clear()
-                
+
         # if it's a private zone - write the filtered zone name to file
         else:
             zoneName = set_ZoneName(zone)

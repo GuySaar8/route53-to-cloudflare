@@ -1,16 +1,16 @@
 # route_53_cloudflare
 
-Our Python tool easily gets all the route53 zones and recods of spesific aws account 
+Our Python tool easily gets all the route53 zones and recods of a spesific aws account 
 and parse them into Terraform cloudflare resources.
 
-In addition the tool will create tests to validate the new records in cloudflare 
-compared with the current global DNS records, using nslookup.
+In addition it creates validation scripts, testing the new records in Cloudflare.
+Using nslookup, the script will compared the records in Cloudflare with the  records in global DNS records server.
 
 To make the result code organized, we separated the terraform files based on DNS records types (for example A.tf, CANME.tf).
 
 ## Installation
 
-To install our version of this project, just clone the repository and install the
+To install our version of this project, clone the repository and install the
 module:
 
 ```bash
